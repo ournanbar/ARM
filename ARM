@@ -1,0 +1,117 @@
+//LED INTERFACING
+#include <LPC21XX.H>
+char switchStatus;
+
+int main (void)
+{
+   PINSEL0 = 0x00000000;
+   IO0DIR &= 0xFFFFFFFE; // P 0.0-switch
+   IO0DIR |= 0x00000002; //PO.1 - led
+   
+   while (1)
+   {
+    switchStatus = (IOPIN0 & 0x01);
+    if(switchStatus==1)
+    {
+      IOSET0 |= 0x00000002;
+    }
+    else
+    {
+      IOCLR0 |= 0x00000002;
+    }
+  }
+}
+
+
+//LCD INTERFACTING
+
+#include <lpc214x.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+void delay_ms (uint16_t j) {
+    uint16_t x, i;
+    for (i = 0; i < j; i++) {
+        for (x = 0; x < 60000; x++);
+    }
+}
+
+void LCD_CMD (char command) {
+    IO0PIN = (IO0PIN & 0xFFFFF0FF) | ((command & 0xF0) << 12);
+    IO0SET = 0x0000040;
+    IO0CLR = 0x0000030;
+    delay_ms(5);
+    IO0CLR = 0x0000040;
+    delay_ms(5);
+
+    IO0PIN = (IO0PIN & 0xFFFFF0FF) | ((command & 0x0F) << 12);
+    IO0SET = 0x0000040;
+    IO0CLR = 0x0000030;
+    delay_ms(5);
+    IO0CLR = 0x0000040;
+    delay_ms(5);
+}
+
+void LCD_INIT(void) {
+    IO0DIR = 0x0000FFF0;
+    delay_ms(20);
+    LCD_CMD(0x02);
+    LCD_CMD(0x28);
+    LCD_CMD(0x0C);
+    LCD_CMD(0x06);
+    LCD_CMD(0x01);
+    LCD_CMD(0x80);
+}
+
+void LCD_STRING(char* msg) {
+    uint8_t i = 0;
+    while (msg[i] != 0) {
+        IO0PIN = (IO0PIN & 0xFFFFF0FF) | ((msg[i] & 0xF0) << 12);
+        IO0SET = 0x0000050;
+        IO0CLR = 0x0000020;
+        delay_ms(2);
+        IO0CLR = 0x0000040;
+        delay_ms(5);
+
+        IO0PIN = (IO0PIN & 0xFFFFF0FF) | ((msg[i] & 0x0F) << 12);
+        IO0SET = 0x0000050;
+        IO0CLR = 0x0000020;
+        delay_ms(2);
+        IO0CLR = 0x0000040;
+        delay_ms(5);
+        i++;
+    }
+}
+
+void LCD_CHAR(char msg) {
+    IO0PIN = (IO0PIN & 0xFFFFF0FF) | ((msg & 0xF0) << 12);
+    IO0SET = 0x0000050;
+    IO0CLR = 0x0000020;
+    delay_ms(2);
+    IO0CLR = 0x0000040;
+    delay_ms(5);
+
+    IO0PIN = (IO0PIN & 0xFFFFF0FF) | ((msg & 0x0F) << 12);
+    IO0SET = 0x0000050;
+    IO0CLR = 0x0000020;
+    delay_ms(2);
+    IO0CLR = 0x0000040;
+    delay_ms(5);
+}
+int main(void) {
+    uint8_t j;
+    j = 0;
+    LCD_INIT();
+    LCD_STRING("Good day!");
+    LCD_CMD(0xC0); 
+    LCD_STRING("Val of j is: "); 
+    while (1) {
+        char val_j[3];
+        sprintf(buffer, "%d", j);  
+        LCD_STRING(buffer); 
+        delay_ms(1000); 
+        LCD_CMD(0xC0); 
+    }
+    return 0;
+}
